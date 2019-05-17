@@ -7,7 +7,6 @@ import UserContext from "./context/User";
 import PageContext from "./context/Page";
 
 import Display from "./components/Display";
-import Counter from "./components/Counter";
 
 function App() {
   //reducer que altera a página
@@ -19,38 +18,43 @@ function App() {
       case "decrement":
         return state - 1;
 
+      case "initial":
+        return 1;
+
       default:
         return state;
     }
   }
 
+  //reducer de página
   const [page, pageDispatch] = useReducer(pageReducer, 1);
+
+  //estado de usuário
+  const [user, setUser] = useState();
 
   //estado de repos
   const [repos, setRepos] = useState();
 
-  //efeito em quando alterar a página com o reducer, para fazer o request novamente e atualizar os repos
+  //efeito para quando alterar a página com o reducer, ou o usuário com o setUser, fazer o request novamente e atualizar os repos
   useEffect(() => {
     async function getRepos() {
-      const response = await api.get(
-        `/users/Maikeaerosmith/repos?page=${page}`
-      );
+      if (!user) return false;
+      const response = await api.get(`/users/${user}/repos?page=${page}`);
 
       setRepos(response.data);
     }
 
     getRepos();
-  }, [page]);
+  }, [page, user]);
 
   return (
     // provider do reducer, para todos components poderem acessar o estado page e chamarem o pageDispatch para trocar de página
     <PageContext.Provider value={{ page, pageDispatch }}>
       {/* provider do usuário do repositório, para todos componentes acessarem o usuário atual */}
-      <UserContext.Provider value={repos && repos[0].owner.login}>
+      <UserContext.Provider value={{ user, setUser }}>
         {/*  provider dos repositórios, para todos componentes acessarem os repositórios */}
         <RepositoryContext.Provider value={repos}>
           <Display />
-          <Counter />
         </RepositoryContext.Provider>
       </UserContext.Provider>
     </PageContext.Provider>
